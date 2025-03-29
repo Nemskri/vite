@@ -2,31 +2,32 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import axios from "axios";
 import {
-    Award,
-    Briefcase,
-    ChevronUp,
-    FileText,
-    GraduationCap,
-    Upload,
+  Award,
+  Briefcase,
+  ChevronUp,
+  FileText,
+  GraduationCap,
+  Upload,
 } from "lucide-react";
 import { useState } from "react";
 import {
-    Bar,
-    BarChart,
-    CartesianGrid,
-    ResponsiveContainer,
-    Tooltip,
-    XAxis,
-    YAxis,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from "recharts";
 
 // Mock data for skills
@@ -51,58 +52,24 @@ const ResumeParser = () => {
     }
   };
 
-  const handleParse = () => {
+  const handleParse = async () => {
     if (!resumeFile) return;
 
     setIsLoading(true);
-
-    // Simulate parsing (in a real app, you'd send the file to your backend)
-    setTimeout(() => {
-      // Mock parsed data
-      setResumeData({
-        name: "Alex Johnson",
-        email: "alex.johnson@example.com",
-        phone: "(555) 123-4567",
-        summary:
-          "Experienced full-stack developer with 5+ years of experience in React, Node.js, and cloud technologies.",
-        skills: [
-          "JavaScript",
-          "React",
-          "Node.js",
-          "CSS",
-          "HTML",
-          "AWS",
-          "TypeScript",
-          "Git",
-        ],
-        experience: [
-          {
-            title: "Senior Frontend Developer",
-            company: "Tech Solutions Inc.",
-            period: "2020 - Present",
-            description:
-              "Developed and maintained React applications for enterprise clients.",
-          },
-          {
-            title: "Web Developer",
-            company: "Digital Creations",
-            period: "2018 - 2020",
-            description:
-              "Built responsive websites and implemented UI/UX designs.",
-          },
-        ],
-        education: [
-          {
-            degree: "Bachelor of Science in Computer Science",
-            institution: "University of Technology",
-            year: "2018",
-          },
-        ],
-      });
-
-      setIsLoading(false);
-      setParseSuccess(true);
-    }, 2000);
+    const formData = new FormData();
+    formData.append("file", resumeFile);
+    const { data } = await axios.post(
+      `${import.meta.env.VITE_SERVER}/extract-content`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+    setResumeData(data);
+    setIsLoading(false);
+    setParseSuccess(true);
   };
 
   const handleReset = () => {
