@@ -217,10 +217,10 @@ const Resume = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-gradient-to-br from-gray-50 to-gray-100 print:bg-white print:p-0">
+    <div className="max-w-full mx-auto p-2 bg-gradient-to-br from-gray-50 to-gray-100 print:bg-white print:p-0">
       {/* Header */}
       <header className="mb-8 pb-4 border-b-2 border-indigo-500">
-        <div className="flex flex-col md:flex-row justify-between items-start gap-6">
+        <div className="flex flex-col md:flex-row justify-between items-start gap-2">
           <div className="w-full md:w-2/3">
             <h1 className="text-4xl font-bold text-indigo-700 mb-2 text-left">
               {data.personal_info.name}
@@ -229,21 +229,21 @@ const Resume = () => {
               {data.professional_summary}
             </p>
           </div>
-          <div className="w-full md:w-1/3 bg-indigo-50 p-4 rounded-lg">
+          <div className="w-full md:w-1/3 bg-indigo-50 p-2 rounded-lg">
             <div className="space-y-3 text-left">
-              <div className="flex items-center gap-3 text-gray-800">
+              <div className="flex items-center gap-2 text-gray-800">
                 <Mail className="w-5 h-5 text-indigo-600" />
                 <span className="text-sm">{data.personal_info.email}</span>
               </div>
-              <div className="flex items-center gap-3 text-gray-800">
+              <div className="flex items-center gap-2 text-gray-800">
                 <Phone className="w-5 h-5 text-indigo-600" />
                 <span className="text-sm">{data.personal_info.phone}</span>
               </div>
-              <div className="flex items-center gap-3 text-gray-800">
+              <div className="flex items-center gap-2 text-gray-800">
                 <MapPin className="w-5 h-5 text-indigo-600" />
                 <span className="text-sm">{data.personal_info.address}</span>
               </div>
-              <div className="flex gap-4 pt-2">
+              <div className="flex gap-2 pt-2">
                 <a
                   href={data.personal_info.linkedin}
                   target="_blank"
@@ -272,7 +272,7 @@ const Resume = () => {
       </header>
 
       {/* Main Content */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
         {/* Left Column */}
         <div className="md:col-span-2 space-y-8">
           {/* Work Experience */}
@@ -361,6 +361,26 @@ const Resume = () => {
               </CardContent>
             </Card>
           </section>
+          {/* Languages */}
+          <section>
+            <h2 className="text-xl font-semibold text-indigo-700 mb-3 text-left">
+              Languages
+            </h2>
+            <Card className="shadow-lg bg-white">
+              <CardContent className="pt-6">
+                <div className="flex flex-wrap gap-2">
+                  {data.languages.map((lang, index) => (
+                    <span
+                      key={index}
+                      className="bg-indigo-600 text-white px-3 py-1 rounded-full text-sm"
+                    >
+                      {lang}
+                    </span>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </section>
         </div>
 
         {/* Right Column */}
@@ -433,27 +453,6 @@ const Resume = () => {
                     </li>
                   ))}
                 </ul>
-              </CardContent>
-            </Card>
-          </section>
-
-          {/* Languages */}
-          <section>
-            <h2 className="text-xl font-semibold text-indigo-700 mb-3 text-left">
-              Languages
-            </h2>
-            <Card className="shadow-lg bg-white">
-              <CardContent className="pt-6">
-                <div className="flex flex-wrap gap-2">
-                  {data.languages.map((lang, index) => (
-                    <span
-                      key={index}
-                      className="bg-indigo-600 text-white px-3 py-1 rounded-full text-sm"
-                    >
-                      {lang}
-                    </span>
-                  ))}
-                </div>
               </CardContent>
             </Card>
           </section>
