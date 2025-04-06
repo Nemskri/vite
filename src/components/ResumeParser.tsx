@@ -15,11 +15,12 @@ import {
   Briefcase,
   FileText,
   GraduationCap,
-  Upload,
   Loader2,
+  Upload,
 } from "lucide-react";
 import { useState } from "react";
 import { JobDescriptionModal } from "./InsightsModal";
+import InsightsPanel from "./InsightsPanel";
 
 const ResumeParser = () => {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
@@ -28,6 +29,7 @@ const ResumeParser = () => {
   const [isFetchingInsights, setIsFetchingInsights] = useState(false);
   const [parseSuccess, setParseSuccess] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [insights, setInsights] = useState<any>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -65,6 +67,7 @@ const ResumeParser = () => {
     setResumeFile(null);
     setResumeData(null);
     setParseSuccess(false);
+    setInsights(null);
   };
 
   const handleGetInsights = () => {
@@ -87,7 +90,7 @@ const ResumeParser = () => {
         }
       );
       console.log("Insights Received:", response.data);
-      // TODO: Store insights in state or display them
+      setInsights(response.data);
     } catch (error) {
       console.error("Error fetching insights:", error);
     } finally {
@@ -357,6 +360,8 @@ const ResumeParser = () => {
           </div>
         </div>
       )}
+
+      {insights && <InsightsPanel insights={insights} />}
     </div>
   );
 };
