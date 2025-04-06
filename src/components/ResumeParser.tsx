@@ -1,4 +1,3 @@
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,42 +7,27 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import axios from "axios";
 import {
   Award,
+  Ban,
   Briefcase,
-  ChevronUp,
   FileText,
   GraduationCap,
   Upload,
+  Loader2,
 } from "lucide-react";
 import { useState } from "react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-
-// Mock data for skills
-const skillsData = [
-  { name: "JavaScript", value: 85 },
-  { name: "React", value: 80 },
-  { name: "CSS", value: 70 },
-  { name: "HTML", value: 90 },
-  { name: "Node.js", value: 65 },
-];
+import { JobDescriptionModal } from "./InsightsModal";
 
 const ResumeParser = () => {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [resumeData, setResumeData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isParsing, setIsParsing] = useState(false);
+  const [isFetchingInsights, setIsFetchingInsights] = useState(false);
   const [parseSuccess, setParseSuccess] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -55,21 +39,26 @@ const ResumeParser = () => {
   const handleParse = async () => {
     if (!resumeFile) return;
 
-    setIsLoading(true);
-    const formData = new FormData();
-    formData.append("file", resumeFile);
-    const { data } = await axios.post(
-      `${import.meta.env.VITE_SERVER}/extract-content`,
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }
-    );
-    setResumeData(data);
-    setIsLoading(false);
-    setParseSuccess(true);
+    setIsParsing(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", resumeFile);
+      const { data } = await axios.post(
+        `${import.meta.env.VITE_SERVER}/extract-content`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      setResumeData(data);
+      setParseSuccess(true);
+    } catch (error) {
+      console.error("Error parsing resume:", error);
+    } finally {
+      setIsParsing(false);
+    }
   };
 
   const handleReset = () => {
@@ -78,22 +67,52 @@ const ResumeParser = () => {
     setParseSuccess(false);
   };
 
-  return (
-    <div className="container mx-auto py-10 px-4">
-      <h1 className="text-3xl font-bold text-center mb-8">Resume Parser</h1>
+  const handleGetInsights = () => {
+    setIsModalOpen(true);
+  };
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="md:col-span-1">
-          <CardHeader>
+  const handleModalSubmit = async (jobDescription: string) => {
+    setIsFetchingInsights(true);
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_SERVER}/get-insights`,
+        {
+          resumeData,
+          jobDescription,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      console.log("Insights Received:", response.data);
+      // TODO: Store insights in state or display them
+    } catch (error) {
+      console.error("Error fetching insights:", error);
+    } finally {
+      setIsFetchingInsights(false);
+    }
+  };
+
+  return (
+    <div className="container mx-auto py-12 px-6 bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen relative">
+      <h1 className="text-4xl font-extrabold text-center mb-10 text-gray-800">
+        Resume Parser
+      </h1>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <Card className="md:col-span-1 shadow-lg hover:shadow-xl transition-shadow">
+          <CardHeader className="bg-gray-800 text-white rounded-t-lg">
             <CardTitle className="flex items-center gap-2">
               <Upload size={20} /> Upload Resume
             </CardTitle>
-            <CardDescription>
-              Upload your resume in PDF, DOCX, or TXT format
+            <CardDescription className="text-gray-200">
+              Supports PDF, DOCX, or TXT formats
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="border-2 border-dashed rounded-lg p-6 text-center hover:bg-gray-50 transition-colors cursor-pointer">
+          <CardContent className="pt-6">
+            <div className="border-2 border-dashed rounded-lg p-6 text-center bg-white hover:bg-gray-50 transition-colors cursor-pointer">
               <input
                 type="file"
                 id="resume-upload"
@@ -103,32 +122,36 @@ const ResumeParser = () => {
               />
               <label htmlFor="resume-upload" className="cursor-pointer">
                 <FileText className="mx-auto h-12 w-12 text-gray-400" />
-                <p className="mt-2 text-sm text-gray-600">
-                  Click to browse or drag and drop
+                <p className="mt-2 text-sm text-gray-600 font-medium">
+                  Drag & drop or click to upload
                 </p>
               </label>
             </div>
 
             {resumeFile && (
-              <div className="mt-4">
-                <p className="text-sm">
-                  Selected file:{" "}
-                  <span className="font-medium">{resumeFile.name}</span>
+              <div className="mt-4 space-y-4">
+                <p className="text-sm text-gray-700">
+                  Selected:{" "}
+                  <span className="font-semibold">{resumeFile.name}</span>
                 </p>
-                <div className="flex gap-2 mt-2">
+                <div className="flex gap-3">
                   <Button
                     onClick={handleParse}
-                    disabled={isLoading}
-                    className="w-full"
+                    disabled={isParsing}
+                    className="w-full bg-blue-600 hover:bg-blue-700 transition-colors"
                   >
-                    {isLoading ? "Parsing..." : "Parse Resume"}
+                    {isParsing ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : null}
+                    {isParsing ? "Parsing..." : "Parse Resume"}
                   </Button>
                   <Button
                     variant="outline"
                     onClick={handleReset}
-                    className="shrink-0"
+                    className="shrink-0 border-red-500 text-red-500 hover:bg-red-50 hover:text-red-600"
                   >
-                    <ChevronUp size={16} />
+                    <Ban size={16} className="mr-2" />
+                    Clear
                   </Button>
                 </div>
               </div>
@@ -139,36 +162,56 @@ const ResumeParser = () => {
         <div className="md:col-span-2">
           {parseSuccess ? (
             <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="experience">
+              <TabsList className="grid w-full grid-cols-4 bg-gray-800 rounded-t-lg">
+                <TabsTrigger
+                  value="overview"
+                  className="text-white data-[state=active]:bg-blue-600"
+                >
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger
+                  value="experience"
+                  className="text-white data-[state=active]:bg-blue-600"
+                >
                   <Briefcase className="mr-2 h-4 w-4" /> Experience
                 </TabsTrigger>
-                <TabsTrigger value="education">
+                <TabsTrigger
+                  value="education"
+                  className="text-white data-[state=active]:bg-blue-600"
+                >
                   <GraduationCap className="mr-2 h-4 w-4" /> Education
                 </TabsTrigger>
-                <TabsTrigger value="skills">
+                <TabsTrigger
+                  value="skills"
+                  className="text-white data-[state=active]:bg-blue-600"
+                >
                   <Award className="mr-2 h-4 w-4" /> Skills
                 </TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>{resumeData.name}</CardTitle>
-                    <CardDescription className="flex flex-col gap-1">
+                <Card className="shadow-md">
+                  <CardHeader className="bg-gray-50">
+                    <CardTitle className="text-2xl">
+                      {resumeData.name}
+                    </CardTitle>
+                    <CardDescription className="flex flex-col gap-1 text-gray-600">
                       <span>{resumeData.email}</span>
                       <span>{resumeData.phone}</span>
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <h3 className="font-medium mb-2">Summary</h3>
+                  <CardContent className="pt-6">
+                    <h3 className="font-semibold text-lg mb-2">Summary</h3>
                     <p className="text-gray-700 mb-4">{resumeData.summary}</p>
 
-                    <h3 className="font-medium mb-2">Key Skills</h3>
+                    <h3 className="font-semibold text-lg mb-2">Key Skills</h3>
                     <div className="flex flex-wrap gap-2">
                       {resumeData.skills.map((skill: string, index: number) => (
-                        <Badge key={index} variant="secondary">
+                        <Badge
+                          key={index}
+                          variant="secondary"
+                          className="bg-blue-100 text-blue-800"
+                        >
                           {skill}
                         </Badge>
                       ))}
@@ -178,18 +221,20 @@ const ResumeParser = () => {
               </TabsContent>
 
               <TabsContent value="experience">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Work Experience</CardTitle>
+                <Card className="shadow-md">
+                  <CardHeader className="bg-gray-50">
+                    <CardTitle className="text-2xl">Work Experience</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-6">
+                  <CardContent className="space-y-6 pt-6">
                     {resumeData.experience.map((exp: any, index: number) => (
                       <div
                         key={index}
-                        className="border-l-2 border-gray-200 pl-4 pb-2"
+                        className="border-l-4 border-blue-500 pl-4 pb-4 hover:bg-gray-50 transition-colors"
                       >
-                        <h3 className="font-semibold text-lg">{exp.title}</h3>
-                        <p className="text-gray-600">
+                        <h3 className="font-semibold text-lg text-gray-800">
+                          {exp.title}
+                        </h3>
+                        <p className="text-gray-600 font-medium">
                           {exp.company} | {exp.period}
                         </p>
                         <p className="mt-2 text-gray-700">{exp.description}</p>
@@ -200,18 +245,20 @@ const ResumeParser = () => {
               </TabsContent>
 
               <TabsContent value="education">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Education</CardTitle>
+                <Card className="shadow-md">
+                  <CardHeader className="bg-gray-50">
+                    <CardTitle className="text-2xl">Education</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-4">
+                  <CardContent className="space-y-4 pt-6">
                     {resumeData.education.map((edu: any, index: number) => (
                       <div
                         key={index}
-                        className="border-l-2 border-gray-200 pl-4 pb-2"
+                        className="border-l-4 border-blue-500 pl-4 pb-2 hover:bg-gray-50 transition-colors"
                       >
-                        <h3 className="font-semibold">{edu.degree}</h3>
-                        <p className="text-gray-600">
+                        <h3 className="font-semibold text-gray-800">
+                          {edu.degree}
+                        </h3>
+                        <p className="text-gray-600 font-medium">
                           {edu.institution} | {edu.year}
                         </p>
                       </div>
@@ -221,44 +268,20 @@ const ResumeParser = () => {
               </TabsContent>
 
               <TabsContent value="skills">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Skills Assessment</CardTitle>
+                <Card className="shadow-md">
+                  <CardHeader className="bg-gray-50">
+                    <CardTitle className="text-2xl">Skills</CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="h-64">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={skillsData}
-                          layout="vertical"
-                          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                  <CardContent className="pt-6">
+                    <div className="flex flex-wrap gap-2">
+                      {resumeData.skills.map((skill: string, index: number) => (
+                        <Badge
+                          key={index}
+                          variant="secondary"
+                          className="bg-blue-100 text-blue-800 text-sm py-1 px-2"
                         >
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis type="number" domain={[0, 100]} />
-                          <YAxis dataKey="name" type="category" width={100} />
-                          <Tooltip />
-                          <Bar
-                            dataKey="value"
-                            fill="#8884d8"
-                            radius={[0, 4, 4, 0]}
-                          />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-
-                    <div className="mt-6 space-y-4">
-                      {skillsData.map((skill, index) => (
-                        <div key={index}>
-                          <div className="flex justify-between mb-1">
-                            <span className="text-sm font-medium">
-                              {skill.name}
-                            </span>
-                            <span className="text-sm text-gray-500">
-                              {skill.value}%
-                            </span>
-                          </div>
-                          <Progress value={skill.value} className="h-2" />
-                        </div>
+                          {skill}
+                        </Badge>
                       ))}
                     </div>
                   </CardContent>
@@ -266,23 +289,24 @@ const ResumeParser = () => {
               </TabsContent>
             </Tabs>
           ) : (
-            <Card className="h-full flex items-center justify-center">
+            <Card className="h-full flex items-center justify-center shadow-lg">
               <CardContent className="text-center p-10">
-                {isLoading ? (
-                  <div className="animate-pulse space-y-4">
-                    <div className="h-4 bg-gray-200 rounded w-3/4 mx-auto"></div>
-                    <div className="h-4 bg-gray-200 rounded w-1/2 mx-auto"></div>
-                    <div className="h-4 bg-gray-200 rounded w-5/6 mx-auto"></div>
+                {isParsing ? (
+                  <div className="space-y-4">
+                    <Loader2 className="h-12 w-12 text-blue-500 animate-spin mx-auto" />
+                    <p className="text-gray-600 font-medium">
+                      Parsing your resume, please wait...
+                    </p>
                   </div>
                 ) : (
                   <>
                     <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-xl font-medium mb-2">
+                    <h3 className="text-2xl font-semibold text-gray-800 mb-2">
                       No Resume Parsed Yet
                     </h3>
                     <p className="text-gray-600 max-w-md mx-auto">
-                      Upload a resume and click "Parse Resume" to extract
-                      information and visualize your career data.
+                      Upload a resume and click "Parse Resume" to see your
+                      career data come to life!
                     </p>
                   </>
                 )}
@@ -293,15 +317,45 @@ const ResumeParser = () => {
       </div>
 
       {parseSuccess && (
-        <Alert className="mt-6">
-          <AlertTitle className="flex items-center">
-            <FileText className="h-4 w-4 mr-2" /> Resume Parsed Successfully
-          </AlertTitle>
-          <AlertDescription>
-            Your resume has been analyzed. You can now view the extracted
-            information in the tabs above.
-          </AlertDescription>
-        </Alert>
+        <div className="mt-8 w-full bg-green-50 border border-green-200 shadow-md rounded-lg p-4">
+          <div className="flex items-center text-green-800 font-semibold text-sm mb-2">
+            <FileText className="h-5 w-5 mr-2" />
+            Resume Parsed Successfully
+          </div>
+          <p className="text-green-700 text-sm">
+            Your resume has been analyzed. Explore the details above and click
+            "Get Insights" for more analysis.
+          </p>
+          <div className="mt-4">
+            <Button
+              onClick={handleGetInsights}
+              className="w-full bg-green-600 hover:bg-green-700 transition-colors text-white py-2 rounded-md font-medium"
+              disabled={isFetchingInsights}
+            >
+              {isFetchingInsights ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              {isFetchingInsights ? "Fetching Insights..." : "Get Insights"}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <JobDescriptionModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleModalSubmit}
+      />
+
+      {isFetchingInsights && (
+        <div className="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg flex flex-col items-center">
+            <Loader2 className="h-12 w-12 text-blue-500 animate-spin mb-4" />
+            <p className="text-gray-700 font-medium">
+              Analyzing your eligibility, please wait...
+            </p>
+          </div>
+        </div>
       )}
     </div>
   );
